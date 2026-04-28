@@ -2,18 +2,20 @@ const start = document.getElementById("start");
 const title = document.getElementById("title");
 const cap1 = document.getElementById("cap1");
 const cap2 = document.getElementById("cap2");
+const gamediv = document.getElementById("game");
 class Cat {
-    constructor(name, personality, position, pelt, sprite) {
+    constructor(name, personality, position, pelt, spritedir) {
         this.name = name;
         this.personality = personality;
-        this.position = position;
+        this.position = [0, 0];
         this.pelt = pelt;
-        this.sprite = sprite;
+        this.spritedir = "forward";
     }
     renderCat() {
         let newCat = document.createElement("img");
-        newCat.src = this.sprite;
-        document.body.appendChild(newCat);
+        newCat.src = "media/" + this.pelt + this.spritedir + ".png";
+        newCat.style.minHeight = "64px";
+        gamediv.appendChild(newCat);
     }
     moveTo(target) {
         // Currently going to teleport, will add a movement animation if time
@@ -25,14 +27,14 @@ class Cat {
     }
 }
 class Customer {
-    constructor(name, personality, position, order, variation, happiness=0, sprite) {
+    constructor(name, personality, position, order, variation, happiness, sprite) {
         this.name = name;
         this.personality = personality;
-        this.position = position;
+        this.position = [0, 0];
         this.order = order;
         this.variation = variation;
-        this.happiness = happiness;
-        this.sprite = sprite;
+        this.happiness = 5;
+        this.sprite = [1, 1];
     }
     renderCustomer() {
         let newCustomer = document.createElement("img");
@@ -64,3 +66,5 @@ class Customer {
         }
     }
 }
+let luna = new Cat("Luna", "Calm", [0, 0], "luna", "back");
+luna.renderCat();
