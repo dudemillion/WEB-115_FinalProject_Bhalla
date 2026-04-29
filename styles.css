@@ -42,6 +42,10 @@ h1 {
         -1px 1px 0 #000,
         -1px -1px 0 #000;
 }
+.title {
+    user-select: none;
+    -ms-user-select: none;
+}
 h4 {
     font-family: Baloo;
     font-size: 150%;
@@ -53,6 +57,14 @@ h4 {
         1px -1px 0 #000,
         -1px 1px 0 #000,
         -1px -1px 0 #000;
+}
+.cap1 {
+    user-select: none;
+    -ms-user-select: none;
+}
+.cap2 {
+    user-select: none;
+    -ms-user-select: none;
 }
 button {
     text-align: center;
