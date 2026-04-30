@@ -7,13 +7,14 @@ const animframes = ["", "Lpaw", "", "Rpaw"];
 let selected = null;
 const loaddelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 class Cat {
-    constructor(name, personality, position, pelt, spritedir) {
+    constructor(name, personality, position, pelt, spritedir, speed) {
         this.name = name;
         this.personality = personality;
         this.position = position;
         this.pelt = pelt;
         this.spritedir = spritedir;
         this.index = 0;
+        this.speed = speed;
     }
     renderCat() {
         let newCat = document.createElement("img");
@@ -23,19 +24,44 @@ class Cat {
         newCat.style.left = this.position[0] + "px";
         newCat.style.top = this.position[1] + "px";
         this.image = newCat;
+        newCat.addEventListener("click", function(event) {
+            event.stopPropagation();
+            if (selected !== this) {
+                selected = this;
+                console.log("Player selected " + this);
+                newCat.style.borderStyle = "solid";
+                newCat.style.borderWidth = "1px";
+                newCat.style.borderColor = "yellow";
+            } else {
+                selected = null;
+                console.log("Player deselected " + this);
+                newCat.style.borderStyle = "none";
+            }
+        })
         gamediv.appendChild(newCat);
     }
+    updateSelection() {
+        if (selected !== this) {
+            this.image.style.borderStyle = "none";
+        }
+    }
     moveTo(target) {
+        let rect = this.image.getBoundingClientRect();
+        let startX = parseInt(this.position[0]);
+        let startY = parseInt(this.position[1]);
+        let dist = Math.hypot(target[0] - startX, target[1] - startY);
+        let dura = dist/this.speed;
         let anim = setInterval(() => {
             this.index = (this.index + 1) % animframes.length;
             this.image.src = "media/" + this.pelt + this.spritedir + animframes[this.index] + ".png";
         }, 200);
         let movement = this.image.animate([
-            {top: this.position[0] + "px", left: this.position[1] + "px"},
+            {top: startX + "px", left: startY + "px"},
             {top: target[0] + "px", left: target[1] + "px"}
         ], {
-            duration: 1000,
-            fill: 'forwards'
+            duration: dura,
+            fill: 'forwards',
+            easing: 'linear'
         });
         movement.onfinish = () => {
             clearInterval(anim);
@@ -49,7 +75,7 @@ class Customer {
     constructor(name, personality, position, order, variation, happiness, spritedir) {
         this.name = name;
         this.personality = personality;
-        this.position = [0, 0];
+        this.position = position;
         this.order = order;
         this.variation = variation;
         this.happiness = 5;
@@ -85,34 +111,47 @@ class Customer {
         }
     }
 }
-async function addclickmove() {
-    await loaddelay(100);
-    window.addEventListener("click", function(event) {
-        if (selected) {
-            let x = event.clientX - 32;
-            let y = event.clientY - 64;
-            selected.moveTo([y, x]);
-            selected = null;
-        }
-    })
-}
+let cats = [
+    new Cat("Luna", "Calm", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "luna", "forward", 0.2), 
+    new Cat("Coffee", "Energetic", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "brown", "forward", 0.4),
+    new Cat("Frost", "Drowsy", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "frost", "forward", 0.1),
+    new Cat("Leo", "Playful", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "leo", "forward", 0.3),
+    new Cat("Stripes", "Independent", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "stripe", "forward", 0.3)
+];
 start.addEventListener("click", function () {
-    let luna = new Cat("Luna", "Calm", [0, 0], "luna", "forward");
-    luna.renderCat();
-    luna.image.addEventListener("click", function() {
-        if (selected !== luna) {
-            selected = luna;
-            console.log("Player selected " + luna);
-            luna.style.borderStyle = "solid";
-            luna.style.borderWidth = "1px";
-            luna.style.borderColor = "yellow";
+    start.style.display = "none";
+    cats.forEach((cat) => {
+        cat.renderCat();
+    })
+    window.addEventListener("click", function(event) {
+        cats.forEach((cat) => {
+            cat.updateSelection();
+        })
+        let x = event.clientX - 32;
+        let y = event.clientY - 64;
+        if (selected == null) {
+            console.log("no selected cat");
         } else {
+            if (/luna.*/.test(selected.src)) {
+                cats[0].moveTo([y, x]);
+            } else if (/brown.*/.test(selected.src)) {
+                cats[1].moveTo([y, x]);
+            } else if (/frost.*/.test(selected.src)) {
+                cats[2].moveTo([y, x]);
+            } else if (/leo.*/.test(selected.src)) {
+                cats[3].moveTo([y, x]);
+            } else if (/stripe.*/.test(selected.src)) {
+                cats[4].moveTo([y, x])
+            } else {
+                console.log("Unknown cat?")
+            }
             selected = null;
-            console.log("Player deselected " + this);
-            newCat.style.borderStyle = "none";
         }
     })
-    addclickmove();
+    title.style.display = "none";
+    cap1.style.display = "none";
+    cap2.style.display = "none";
+    document.body.style.setProperty("--before-image", "''")
 })
     
 
