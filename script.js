@@ -5,6 +5,15 @@ const cap2 = document.getElementById("cap2");
 const gamediv = document.getElementById("game");
 const animframes = ["", "Lpaw", "", "Rpaw"];
 let selected = null;
+let selectedcat = document.createElement("p");
+selectedcat.innerHTML = "Selected Cat: ";
+selectedcat.style.fontFamily = "Momentz";
+selectedcat.style.position = "fixed";
+selectedcat.style.top = "0";
+selectedcat.style.left = "0";
+selectedcat.style.color = "rgb(150, 106, 52)";
+selectedcat.style.fontSize = "130%";
+selectedcat.style.padding = "10px";
 const loaddelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 class Cat {
     constructor(name, personality, position, pelt, spritedir, speed) {
@@ -24,18 +33,23 @@ class Cat {
         newCat.style.left = this.position[0] + "px";
         newCat.style.top = this.position[1] + "px";
         this.image = newCat;
-        newCat.addEventListener("click", function(event) {
+        newCat.addEventListener("click", (event) => {
             event.stopPropagation();
             if (selected !== this) {
+                selectedcat.innerHTML = "Selected Cat: " + this.name;
                 selected = this;
-                console.log("Player selected " + this);
+                console.log("Player selected " + this.name);
+                cats.forEach((cat) => {
+                    cat.updateSelection();
+                })
                 newCat.style.borderStyle = "solid";
                 newCat.style.borderWidth = "1px";
                 newCat.style.borderColor = "yellow";
             } else {
-                selected = null;
-                console.log("Player deselected " + this);
+                selectedcat.innerHTML = "Selected Cat: ";
+                console.log("Player deselected " + this.name);
                 newCat.style.borderStyle = "none";
+                selected = null;
             }
         })
         gamediv.appendChild(newCat);
@@ -56,8 +70,8 @@ class Cat {
             this.image.src = "media/" + this.pelt + this.spritedir + animframes[this.index] + ".png";
         }, 200);
         let movement = this.image.animate([
-            {top: startX + "px", left: startY + "px"},
-            {top: target[0] + "px", left: target[1] + "px"}
+            {left: startX + "px", top: startY + "px"},
+            {left: target[0] + "px", top: target[1] + "px"}
         ], {
             duration: dura,
             fill: 'forwards',
@@ -72,7 +86,7 @@ class Cat {
     }
 }
 class Customer {
-    constructor(name, personality, position, order, variation, happiness, spritedir) {
+    constructor(name, personality, position, order, variation, happiness, spritedir, sprite) {
         this.name = name;
         this.personality = personality;
         this.position = position;
@@ -80,11 +94,27 @@ class Customer {
         this.variation = variation;
         this.happiness = 5;
         this.spritedir = spritedir;
+        this.sprite = "media/person.png";
     }
     renderCustomer() {
         let newCustomer = document.createElement("img");
         newCustomer.src = this.sprite;
-        document.body.appendChild(newCustomer);
+        newCustomer.style.maxHeight = "200px";
+        newCustomer.style.position = "absolute";
+        let infobox = document.createElement("div");
+        infobox.innerHTML = "Name: " + this.name + "<br>" + "Order: " + this.order + "<br>" + "Personality: " + this.personality;
+        infobox.hidden = true;
+        newCustomer.addEventListener("mousemove", (event) => {
+            infobox.style.left = event.pageX + 15 + "px";
+            infobox.style.top = event.pageX + 15 + "px";
+        });
+        newCustomer.addEventListener("mouseenter", () => {
+            infobox.hidden = false;
+        });
+        newCustomer.addEventListener("mouseleave", () => {
+            infobox.hidden = true;
+        });
+        gamediv.appendChild(newCustomer);
     }
     matchPersonality(cat) {
         if (cat && cat.personality) {
@@ -118,6 +148,15 @@ let cats = [
     new Cat("Leo", "Playful", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "leo", "forward", 0.3),
     new Cat("Stripes", "Independent", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "stripe", "forward", 0.3)
 ];
+let orders = ["latte", "cappuccino", "americano", "croissant", "bagel", "breakfastsandwich"];
+let names = ["John", "Jane", "Delaney", "Nick", "Tristan", "Ethan", "Alex", "Sami", "Henry", "Jordan", "Christina", "Nyx", "Vincent"];
+let personalities = ["Calm", "Energetic", "Drowsy", "Playful", "Independent"];
+let customers = [];
+function newcustomer() {
+    let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [41, 0], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
+    newcust.renderCustomer();
+    customers.append(newcust);
+}
 start.addEventListener("click", function () {
     start.style.display = "none";
     cats.forEach((cat) => {
@@ -132,26 +171,21 @@ start.addEventListener("click", function () {
         if (selected == null) {
             console.log("no selected cat");
         } else {
-            if (/luna.*/.test(selected.src)) {
-                cats[0].moveTo([y, x]);
-            } else if (/brown.*/.test(selected.src)) {
-                cats[1].moveTo([y, x]);
-            } else if (/frost.*/.test(selected.src)) {
-                cats[2].moveTo([y, x]);
-            } else if (/leo.*/.test(selected.src)) {
-                cats[3].moveTo([y, x]);
-            } else if (/stripe.*/.test(selected.src)) {
-                cats[4].moveTo([y, x])
-            } else {
-                console.log("Unknown cat?")
-            }
+            selected.image.style.borderStyle = "none";
+            selected.moveTo([x, y]);
             selected = null;
+            selectedcat.innerHTML = "Selected Cat: ";
         }
     })
     title.style.display = "none";
     cap1.style.display = "none";
     cap2.style.display = "none";
     document.body.style.setProperty("--before-image", "''")
+    gamediv.append(selectedcat);
+    newcustomer();
+    let customerflow = setInterval(() => {
+        newcustomer();
+    }, 45000);
 })
     
 
