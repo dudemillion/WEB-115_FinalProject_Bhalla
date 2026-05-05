@@ -16,7 +16,7 @@ selectedcat.style.fontSize = "130%";
 selectedcat.style.padding = "10px";
 const loaddelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 class Cat {
-    constructor(name, personality, position, pelt, spritedir, speed) {
+    constructor(name, personality, position, pelt, spritedir, speed, busy, moving) {
         this.name = name;
         this.personality = personality;
         this.position = position;
@@ -24,6 +24,8 @@ class Cat {
         this.spritedir = spritedir;
         this.index = 0;
         this.speed = speed;
+        this.busy = false;
+        this.moving = false;
     }
     renderCat() {
         let newCat = document.createElement("img");
@@ -32,8 +34,10 @@ class Cat {
         newCat.style.position = "absolute";
         newCat.style.left = this.position[0] + "px";
         newCat.style.top = this.position[1] + "px";
+        newCat.style.zIndex = 2;
         this.image = newCat;
         newCat.addEventListener("click", (event) => {
+            if (this.moving) return;
             event.stopPropagation();
             if (selected !== this) {
                 selectedcat.innerHTML = "Selected Cat: " + this.name;
@@ -60,6 +64,7 @@ class Cat {
         }
     }
     moveTo(target) {
+        this.moving = true;
         let rect = this.image.getBoundingClientRect();
         let startX = parseInt(this.position[0]);
         let startY = parseInt(this.position[1]);
@@ -79,6 +84,8 @@ class Cat {
         });
         movement.onfinish = () => {
             clearInterval(anim);
+            this.moving = false;
+            console.log(this.moving);
             this.image.src = "media/" + this.pelt + this.spritedir + ".png";
             this.index = 0;
             this.position = [target[0] + "px", target[1] + "px"]
@@ -86,7 +93,7 @@ class Cat {
     }
 }
 class Customer {
-    constructor(name, personality, position, order, variation, happiness, spritedir, sprite) {
+    constructor(name, personality, position, order, variation, happiness, spritedir, sprite, busy, givenorder, playedcat) {
         this.name = name;
         this.personality = personality;
         this.position = position;
@@ -94,35 +101,78 @@ class Customer {
         this.variation = variation;
         this.happiness = 5;
         this.spritedir = spritedir;
-        this.sprite = "media/person.png";
+        this.sprite = "media/personplaceholder.png";
+        this.busy = false;
+        this.givenorder = false;
+        this.playedcat = false;
     }
     renderCustomer() {
         let newCustomer = document.createElement("img");
         newCustomer.src = this.sprite;
         newCustomer.style.maxHeight = "200px";
         newCustomer.style.position = "absolute";
+        newCustomer.style.left = this.position[0] + "px";
+        newCustomer.style.top = this.position[1] + "px";
         let infobox = document.createElement("div");
-        infobox.innerHTML = "Name: " + this.name + "<br>" + "Order: " + this.order + "<br>" + "Personality: " + this.personality;
+        this.infobox = infobox;
+        infobox.innerHTML = "Name: " + this.name + "<br>" + "Order: " + this.order + "<br>" + "You have " + (this.givenorder ? "" : "not") + " given them their order." + "<br>" + "Personality: " + this.personality + "<br>" + "Happiness: " + this.happiness;
         infobox.hidden = true;
+        infobox.style.fontFamily = "Baloo";
+        infobox.style.fontSize = "110%";
+        infobox.style.backgroundColor = "rgb(182, 82, 0)";
+        infobox.style.padding = "5px";
+        infobox.style.borderRadius = "5px";
+        infobox.style.position = "absolute";
+        infobox.style.zIndex = 3;
+        gamediv.appendChild(infobox);
         newCustomer.addEventListener("mousemove", (event) => {
             infobox.style.left = event.pageX + 15 + "px";
-            infobox.style.top = event.pageX + 15 + "px";
+            infobox.style.top = event.pageY + 15 + "px";
         });
         newCustomer.addEventListener("mouseenter", () => {
+            if (selected) {
+                newCustomer.style.borderStyle = "solid";
+                newCustomer.style.borderWidth = "1px";
+                newCustomer.style.borderColor = "yellow";
+            }
             infobox.hidden = false;
         });
         newCustomer.addEventListener("mouseleave", () => {
             infobox.hidden = true;
+            newCustomer.style.borderStyle = "none";
+        });
+        newCustomer.addEventListener("click", () => {
+            if (this.busy) return;
+            newCustomer.style.borderStyle = "none";
+            if (selected) {
+                let thiscat = selected;
+                this.matchPersonality(thiscat);
+                this.busy = true;
+                setTimeout(() => {
+                    thiscat.busy = false;
+                    this.busy = false;
+                }, 10000);
+            } else {
+                console.log("No selected cat.")
+            }
         });
         gamediv.appendChild(newCustomer);
     }
+    updateInfo() {
+        this.infobox.innerHTML = "Name: " + this.name + "<br>" + "Order: " + this.order + "<br>" + "You have " + (this.givenorder ? "" : "not") + " given them their order." + "<br>" + "Personality: " + this.personality + "<br>" + "Happiness: " + this.happiness;
+    }
     matchPersonality(cat) {
+        if (this.playedcat) return;
         if (cat && cat.personality) {
+            this.playedcat = true;
             if (cat.personality == this.personality) {
                 console.log("They match! Happiness increases.");
-                this.happiness += 1;
+                this.happiness += 3;
+                this.updateInfo();
+                return true;
             } else {
                 console.log("They don't match. Customer happiness remains.");
+                return false;
             }
         } else {
             console.log("Error! No cat or personality is undefined!")
@@ -148,14 +198,16 @@ let cats = [
     new Cat("Leo", "Playful", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "leo", "forward", 0.3),
     new Cat("Stripes", "Independent", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "stripe", "forward", 0.3)
 ];
-let orders = ["latte", "cappuccino", "americano", "croissant", "bagel", "breakfastsandwich"];
+let orders = ["Latte", "Cappuccino", "Americano", "Croissant", "Bagel", "Breakfast Sandwich"];
 let names = ["John", "Jane", "Delaney", "Nick", "Tristan", "Ethan", "Alex", "Sami", "Henry", "Jordan", "Christina", "Nyx", "Vincent"];
 let personalities = ["Calm", "Energetic", "Drowsy", "Playful", "Independent"];
 let customers = [];
 function newcustomer() {
-    let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [41, 0], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
+    let x = (Math.random() * 20 - 10) * 2;
+    let y = customers.length * 140;
+    let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [(1300 + x), (500 - y)], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
     newcust.renderCustomer();
-    customers.append(newcust);
+    customers.push(newcust);
 }
 start.addEventListener("click", function () {
     start.style.display = "none";
@@ -170,11 +222,14 @@ start.addEventListener("click", function () {
         let y = event.clientY - 64;
         if (selected == null) {
             console.log("no selected cat");
-        } else {
-            selected.image.style.borderStyle = "none";
-            selected.moveTo([x, y]);
+        } else if ((!selected.busy) && (!selected.moving)) {
+            let thiscat = selected;
+            thiscat.image.style.borderStyle = "none";
+            thiscat.moveTo([x, y]);
             selected = null;
             selectedcat.innerHTML = "Selected Cat: ";
+        } else {
+            console.log("Cat is busy with customer or moving. Can't move them.");
         }
     })
     title.style.display = "none";
