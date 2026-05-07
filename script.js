@@ -7,6 +7,7 @@ const animframes = ["", "Lpaw", "", "Rpaw"];
 let selected = null;
 let selectedcat = document.createElement("p");
 let money = 0;
+let selectedorder = null;
 selectedcat.innerHTML = "Selected Cat: ";
 selectedcat.style.fontFamily = "Momentz";
 selectedcat.style.position = "fixed";
@@ -135,7 +136,7 @@ class Customer {
             infobox.style.top = event.pageY + 15 + "px";
         });
         newCustomer.addEventListener("mouseenter", () => {
-            if (selected) {
+            if (selected || selectedorder) {
                 newCustomer.style.borderStyle = "solid";
                 newCustomer.style.borderWidth = "1px";
                 newCustomer.style.borderColor = "yellow";
@@ -168,7 +169,7 @@ class Customer {
                         this.busy = false;
                         thiscat.image.style.filter = "grayscale(0%)";
                         this.updateInfo();
-                        updateMoney();
+                        this.checkReadyToLeave();
                     }, 10000);
                 } else {
                     console.log("Customer already played with cat!");
@@ -176,8 +177,17 @@ class Customer {
             } else {
                 console.log("No selected cat.")
             }
+            if (selectedorder) {
+                if (!this.givenorder) {
+                    let thisorder = selectedorder;
+                    this.matchOrder(thisorder.id);
+                    selectedorder = null;
+                    this.updateInfo();
+                    this.checkReadyToLeave();
+                }
+            }
         });
-        let happinessdown = setInterval(() => {
+        this.happinessdown = setInterval(() => {
             this.happiness -= 1;
             this.updateInfo();
         }, 15000);
@@ -191,13 +201,10 @@ class Customer {
         if (cat && cat.personality) {
             this.playedcat = true;
             if (cat.personality == this.personality) {
-                console.log("They match! Happiness increases.");
                 this.happiness += 3;
-                money += 3;
                 return true;
             } else {
-                console.log("They don't match. Customer happiness down.");
-                this.happiness -= 2;;
+                this.happiness -= 1;
                 return false;
             }
         } else {
@@ -206,14 +213,11 @@ class Customer {
     }
     matchOrder(given) {
         if (given) {
+            this.givenorder = true;
             if (given == this.order) {
-                console.log("Order matches! Customer happiness increases.");
                 this.happiness += 2;
-                money += 5;
-                updateMoney();
             } else {
-                console.log("They don't match. Customer happiness down.");
-                this.happiness -= 2;
+                this.happiness -= 1;
             }
         } else {
             console.log("Error! Order is undefined!")
@@ -224,21 +228,29 @@ class Customer {
         this.infobox.remove();
         customers = customers.filter(c => c !== this);
     }
+    checkReadyToLeave() {
+        if (this.playedcat && this.givenorder) {
+            money += (this.happiness * 2);
+            updateMoney();
+            clearInterval(this.happinessdown);
+            this.leave();
+        }
+    }
 }
 let cats = [
     new Cat("Luna", "Calm", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "luna", "forward", 0.2), 
     new Cat("Coffee", "Energetic", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "brown", "forward", 0.4),
-    new Cat("Frost", "Drowsy", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "frost", "forward", 0.1),
+    new Cat("Frost", "Drowsy", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "frost", "forward", 0.2),
     new Cat("Leo", "Playful", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "leo", "forward", 0.3),
     new Cat("Stripes", "Independent", [Math.floor(Math.random() * 501), Math.floor(Math.random() * 501)], "stripe", "forward", 0.3)
 ];
-let orders = ["Latte", "Cappuccino", "Americano", "Croissant", "Bagel", "Breakfast Sandwich"];
+let orders = ["Latte", "Cappuccino", "Americano", "Croissant", "Donut", "Macaron"];
 let names = ["John", "Jane", "Delaney", "Nick", "Tristan", "Ethan", "Alex", "Sami", "Henry", "Jordan", "Christina", "Nyx", "Vincent"];
 let personalities = ["Calm", "Energetic", "Drowsy", "Playful", "Independent"];
 let customers = [];
 function newcustomer() {
-    let x = (Math.random() * 20 - 10) * 2;
-    let y = customers.length * 140;
+    let x = Math.floor(Math.random() * (window.innerHeight - 150));
+    let y = Math.floor(Math.random() * (window.innerWidth - 69.24));
     let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [(1300 + x), (500 - y)], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
     newcust.renderCustomer();
     customers.push(newcust);
@@ -287,27 +299,166 @@ start.addEventListener("click", function () {
     moneycount.style.top = "0px";
     moneycount.style.right = "90px";
     moneycount.style.textAlign = "right";
+    let ordermenu = document.createElement("div");
+    ordermenu.style.color = "gray";
+    ordermenu.style.textAlign = "center";
+    ordermenu.hidden = true;
+    let americano = document.createElement("img");
+    americano.style.minHeight = "32px";
+    americano.src = "media/americano.png";
+    americano.id = "Americano";
+    americano.addEventListener("click", function(event) {
+        event.stopPropagation();
+        if (selectedorder != americano) {
+            selectedorder = americano;
+            americano.style.borderStyle = "solid";
+            americano.style.borderColor = "yellow";
+            americano.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            americano.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let cappuccino = document.createElement("img");
+    cappuccino.src = "media/capuccino.png";
+    cappuccino.style.minHeight = "32px";
+    cappuccino.id = "Cappuccino";
+    cappuccino.addEventListener("click", function(event) {
+        event.stopPropagation();
+        if (selectedorder != cappuccino) {
+            selectedorder = cappuccino;
+            cappuccino.style.borderStyle = "solid";
+            cappuccino.style.borderColor = "yellow";
+            cappuccino.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            cappuccino.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let latte = document.createElement("img");
+    latte.src = "media/latte.png";
+    latte.style.minHeight = "32px";
+    latte.id = "Latte";
+    latte.addEventListener("click", function(event) {
+        event.stopPropagation();
+        if (selectedorder != latte) {
+            selectedorder = latte;
+            latte.style.borderStyle = "solid";
+            latte.style.borderColor = "yellow";
+            latte.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            latte.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let croissant = document.createElement("img");
+    croissant.src = "media/croissant.png";
+    croissant.style.minHeight = "32px";
+    croissant.id = "Croissant";
+    croissant.addEventListener("click", function (event) {
+        event.stopPropagation();
+        if (selectedorder != croissant) {
+            selectedorder = croissant;
+            croissant.style.borderStyle = "solid";
+            croissant.style.borderColor = "yellow";
+            croissant.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            croissant.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let macaron = document.createElement("img");
+    macaron.src = "media/macaron.png";
+    macaron.style.minHeight = "32px";
+    macaron.id = "Macaron";
+    macaron.addEventListener("click", function (event) {
+        event.stopPropagation();
+        if (selectedorder != macaron) {
+            selectedorder = macaron;
+            macaron.style.borderStyle = "solid";
+            macaron.style.borderColor = "yellow";
+            macaron.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            macaron.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let donut = document.createElement("img");
+    donut.src = "media/donut.png";
+    donut.style.minHeight = "32px";
+    donut.id = "Donut";
+    donut.addEventListener("click", function (event) {
+        event.stopPropagation();
+        if (selectedorder != donut) {
+            selectedorder = donut;
+            donut.style.borderStyle = "solid";
+            donut.style.borderColor = "yellow";
+            donut.style.borderWidth = "1px";
+            backorders.forEach((order) => {
+                if (order != selectedorder) {
+                    order.style.borderStyle = "none";
+                }
+            })
+        } else {
+            donut.style.borderStyle = "none";
+            selectedorder = null;
+        }
+    })
+    let backorders = [americano, cappuccino, latte, macaron, croissant, donut];
+    ordermenu.appendChild(americano);
+    ordermenu.appendChild(cappuccino);
+    ordermenu.appendChild(latte);
+    ordermenu.appendChild(croissant);
+    ordermenu.appendChild(macaron);
+    ordermenu.appendChild(donut);
+    gamediv.appendChild(ordermenu);
     gamediv.appendChild(moneycount);
     gamediv.appendChild(moneyicon);
     newcustomer();
     let customerflow = setInterval(() => {
         newcustomer();
-    }, 450000);
-    async function happinesscheck() {
-        while (true) {
-            for (const c of customers) {
-                if (c.happiness == 0) {
-                    console.log("GAME OVER!");
-                    break;
-                } else {
-                    console.log("everyones happy");
-                    continue;
-                }
+    }, 15000);
+    setInterval(() => {
+        for (let c of customers) {
+            if (c.happiness <= 0) {
+                console.log("GAME OVER!");
             }
-            await new Promise(resolve => setTimeout(resolve, 999999999999));
         }
-    }
-    happinesscheck();
+    }, 1000);
+    document.addEventListener("keypress", (event) => {
+        if (event.key = "q") {
+            if (ordermenu.hidden) {
+                ordermenu.hidden = false;
+            } else {
+                ordermenu.hidden = true;
+            }
+        }
+    })
 })
     
 
