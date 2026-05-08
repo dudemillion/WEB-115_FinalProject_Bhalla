@@ -4,6 +4,8 @@ Student: Nikhil Bhalla | Repository: `WEB-115_FinalProject_Bhalla`
 
 ---
 
+https://dudemillion.github.io/WEB-115_FinalProject_Bhalla/
+
 ## Overview
 
 This is a web-based game that will stage you as a manager and sole-runner of a cat café. Your job is to keep customer ratings and happiness up while balancing service between each of them. The player will be shown a tutorial to start, then be let off into the game. It will progressively get harder with more customers and upgrades (if time permits) will present themselves when affordable and reasonable, such as more tables, more cats, friendlier cats, etc. The goal is to gain as much money as possible.
