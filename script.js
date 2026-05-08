@@ -98,7 +98,7 @@ function updateMoney() {
     document.getElementById("moneycount").innerHTML = "$" + money;
 }
 class Customer {
-    constructor(name, personality, position, order, variation, happiness, spritedir, sprite, busy, givenorder, playedcat) {
+    constructor(name, personality, position, order, variation, happiness, spritedir, sprite, busy, givenorder, playedcat, table) {
         this.name = name;
         this.personality = personality;
         this.position = position;
@@ -110,6 +110,7 @@ class Customer {
         this.busy = false;
         this.givenorder = false;
         this.playedcat = false;
+        this.table = null;
     }
     renderCustomer() {
         let newCustomer = document.createElement("img");
@@ -129,7 +130,7 @@ class Customer {
         infobox.style.padding = "5px";
         infobox.style.borderRadius = "5px";
         infobox.style.position = "absolute";
-        infobox.style.zIndex = 3;
+        infobox.style.zIndex = 5;
         gamediv.appendChild(infobox);
         newCustomer.addEventListener("mousemove", (event) => {
             infobox.style.left = event.pageX + 15 + "px";
@@ -190,7 +191,7 @@ class Customer {
         this.happinessdown = setInterval(() => {
             this.happiness -= 1;
             this.updateInfo();
-        }, 15000);
+        }, 10000);
         gamediv.appendChild(newCustomer);
     }
     updateInfo() {
@@ -224,6 +225,7 @@ class Customer {
         }
     }
     leave() {
+        this.table.setAttribute("taken", "false");
         this.image.remove();
         this.infobox.remove();
         customers = customers.filter(c => c !== this);
@@ -249,11 +251,22 @@ let names = ["John", "Jane", "Delaney", "Nick", "Tristan", "Ethan", "Alex", "Sam
 let personalities = ["Calm", "Energetic", "Drowsy", "Playful", "Independent"];
 let customers = [];
 function newcustomer() {
-    let x = Math.floor(Math.random() * (window.innerHeight - 150));
-    let y = Math.floor(Math.random() * (window.innerWidth - 69.24));
-    let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [(1300 + x), (500 - y)], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
-    newcust.renderCustomer();
-    customers.push(newcust);
+    if (customers.length >= 3) return;
+    let positions = [[400, 525], [800, 180], [1000, 440]]
+    console.log(customers.length);
+    for (const table of tables) {
+        console.log(table.getAttribute("taken"));
+        if (table.getAttribute("taken") === "false") {
+            table.setAttribute("taken", "true");
+            let pos = JSON.parse(table.getAttribute("pos"));
+            let newcust = new Customer(names[Math.floor(Math.random() * names.length)], personalities[Math.floor(Math.random() * personalities.length)], [pos[0], pos[1]], orders[Math.floor(Math.random() * orders.length)], "normal", 5, "forward");
+            newcust.renderCustomer();
+            newcust.table = table;
+            customers.push(newcust);
+            break;
+        }
+    }
+
 }
 start.addEventListener("click", function () {
     start.style.display = "none";
@@ -299,10 +312,67 @@ start.addEventListener("click", function () {
     moneycount.style.top = "0px";
     moneycount.style.right = "90px";
     moneycount.style.textAlign = "right";
+    let table1 = document.createElement("img");
+    table1.src = "media/table.png";
+    table1.style.maxHeight = "128px";
+    table1.style.position = "absolute";
+    table1.style.top = "500px";
+    table1.style.left = "970px";
+    table1.style.zIndex = 4;
+    table1.style.pointerEvents = "none";
+    table1.setAttribute("taken", "false");
+    table1.setAttribute("pos", "[400, 525]");
+    let table2 = document.createElement("img");
+    table2.src = "media/table.png";
+    table2.style.maxHeight = "128px";
+    table2.style.position = "absolute";
+    table2.style.top = "240px";
+    table2.style.left = "770px";
+    table2.style.zIndex = 4;
+    table2.style.pointerEvents = "none";
+    table2.setAttribute("taken", "false");
+    table2.setAttribute("pos", "[800, 180]");
+    let table3 = document.createElement("img");
+    table3.src = "media/table.png";
+    table3.style.maxHeight = "128px";
+    table3.style.position = "absolute";
+    table3.style.top = "585px";
+    table3.style.left = "365px";
+    table3.style.zIndex = 4;
+    table3.style.pointerEvents = "none";
+    table3.setAttribute("taken", "false");
+    table3.setAttribute("pos", "[1000, 440]");
+    tables = [table1, table2, table3];
     let ordermenu = document.createElement("div");
     ordermenu.style.color = "gray";
     ordermenu.style.textAlign = "center";
     ordermenu.hidden = true;
+    let orderhint = document.createElement("p");
+    orderhint.innerHTML = "Press 'Q' to open the menu!";
+    orderhint.style.fontFamily = "Baloo";
+    orderhint.style.fontSize = "130%"
+    orderhint.style.color = "rgb(150, 106, 52)";
+    let help = document.createElement("img");
+    help.src = "media/help.png";
+    help.style.maxHeight = "32px";
+    help.style.position = "fixed";
+    help.style.bottom = "10px";
+    help.style.right = "10px";
+    help.style.zIndex = 10;
+    let helpbox = document.createElement("p");
+    helpbox.innerHTML = "Welcome to the cat cafe! <br> Each customer wants a drink/food and a cat. Your job is to assign each to each customer.<br> Coffee, the brown cat, is an ENERGETIC cat!<br>Leo, the yellow cat, is a PLAYFUL cat!<br>Luna, the black cat, is a CALM cat!<br>Frost, the black cat with white highlights, is a DROWSY cat!<br>And finally, Stripes, the white cat, is an INDEPENDENT cat."
+    helpbox.style.fontFamily = "Baloo";
+    helpbox.style.fontSize = "120%";
+    helpbox.style.color = "rgb(150, 106, 52)";
+    helpbox.style.zIndex = 10;
+    helpbox.hidden = true;
+    help.addEventListener("click", function () {
+        if (helpbox.hidden) {
+            helpbox.hidden = false;
+        } else {
+            helpbox.hidden = true;
+        }
+    })
     let americano = document.createElement("img");
     americano.style.minHeight = "32px";
     americano.src = "media/americano.png";
@@ -436,22 +506,31 @@ start.addEventListener("click", function () {
     ordermenu.appendChild(croissant);
     ordermenu.appendChild(macaron);
     ordermenu.appendChild(donut);
+    gamediv.appendChild(table1);
+    gamediv.appendChild(table2);
+    gamediv.appendChild(table3);
+    gamediv.appendChild(orderhint);
     gamediv.appendChild(ordermenu);
     gamediv.appendChild(moneycount);
     gamediv.appendChild(moneyicon);
+    gamediv.appendChild(help);
+    gamediv.appendChild(helpbox);
     newcustomer();
     let customerflow = setInterval(() => {
         newcustomer();
+        console.log("added cust");
     }, 15000);
     setInterval(() => {
         for (let c of customers) {
             if (c.happiness <= 0) {
-                console.log("GAME OVER!");
+                alert(c.name + " is unhappy. They left a review that destroyed your cafe. Game over. Your final money was " + money + "!");
+                window.location.reload();
+                break;
             }
         }
     }, 1000);
     document.addEventListener("keypress", (event) => {
-        if (event.key = "q") {
+        if (event.key === "q") {
             if (ordermenu.hidden) {
                 ordermenu.hidden = false;
             } else {
@@ -460,7 +539,3 @@ start.addEventListener("click", function () {
         }
     })
 })
-    
-
-
-
